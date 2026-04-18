@@ -1,7 +1,0 @@
-flask
-flask-cors
-supabase
-python-jose
-rapidfuzz
-playwright
-gunicorn
