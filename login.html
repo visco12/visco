@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Esco Smart</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  font-family:'Poppins',sans-serif;
+  background: radial-gradient(circle at top,#1e293b,#0a1858);
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+  color:white;
+}
+
+header{ padding:30px 50px; }
+
+.logo span{
+  font-size:24px;
+  font-weight:700;
+  background:linear-gradient(90deg,#8b5cf6,#8b8b8b);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+main{
+  flex:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.login-container{
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(25px);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px;
+  padding:50px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+
+h1{ text-align:center; margin-bottom:30px; }
+
+.social-btn{
+  width:100%;
+  margin-bottom:10px;
+  padding:12px;
+  border-radius:30px;
+  border:1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.03);
+  color:white;
+  cursor:pointer;
+}
+
+.form-group{ margin-bottom:15px; }
+
+.form-group input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.05);
+  color:white;
+}
+
+.login-btn{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:30px;
+  background:linear-gradient(135deg,#8b5cf6,#22d3ee);
+  color:black;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.back-btn{
+  text-align:center;
+  margin-top:20px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">
+    <span>⚡ visco compare</span>
+  </div>
+</header>
+
+<main>
+<div class="login-container">
+
+<h1>Login</h1>
+
+<button class="social-btn"><i class="fa-brands fa-google"></i> Continue with Google</button>
+<button class="social-btn"><i class="fa-brands fa-facebook"></i> Continue with Facebook</button>
+
+<form onsubmit="login(event)">
+  <div class="form-group">
+    <input type="text" id="email" placeholder="Email" required>
+  </div>
+
+  <div class="form-group">
+    <input type="password" id="password" placeholder="Password" required>
+  </div>
+
+  <button class="login-btn">Login</button>
+</form>
+
+<button onclick="signup()" class="login-btn">Create Account</button>
+
+<div class="back-btn" onclick="goHome()">⬅ Back</div>
+
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+// ✅ CORRECT SUPABASE INIT
+const supabaseClient = supabase.createClient(
+  "https://yacgfuyzwdcwevojffzd.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhY2dmdXl6d2Rjd2V2b2pmZnpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjYyMTgsImV4cCI6MjA5MDgwMjIxOH0.JL-42qRx_Ow7gsaRsJoOENLY_Gpe7rA_jJTYyVF9zds"
+);
+
+// ✅ SINGLE LOGIN FUNCTION (FIXED)
+
+let currentMode = "password"; // password | email_otp | phone_otp
+
+// 🔥 SMART LOGIN
+async function login(e){
+  e.preventDefault();
+
+  const input = document.getElementById("email").value.trim();
+  const pass = document.getElementById("password").value.trim();
+
+  // DETECT TYPE
+  const isPhone = /^\d{10}$/.test(input);
+  const isEmail = input.includes("@");
+
+  try {
+
+    // =========================
+    // 📱 PHONE OTP FLOW
+    // =========================
+    if(isPhone){
+      currentMode = "phone_otp";
+
+      // If no OTP entered → send OTP
+      if(pass.length === 0){
+        const { error } = await supabaseClient.auth.signInWithOtp({
+          phone: "+91" + input
+        });
+
+        if(error) return alert(error.message);
+
+        alert("OTP sent to phone");
+        return;
+      }
+
+      // VERIFY OTP
+      const { data, error } = await supabaseClient.auth.verifyOtp({
+        phone: "+91" + input,
+        token: pass,
+        type: "sms"
+      });
+
+      if(error) return alert(error.message);
+
+      localStorage.setItem("token", data.session.access_token);
+      window.location.href = "homepage.html";
+      return;
+    }
+
+    // =========================
+    // 📧 EMAIL OTP FLOW
+    // =========================
+    if(isEmail && pass.length === 0){
+      currentMode = "email_otp";
+
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email: input
+      });
+
+      if(error) return alert(error.message);
+
+      alert("OTP sent to email");
+      return;
+    }
+
+    // VERIFY EMAIL OTP
+    if(isEmail && pass.length === 6){
+      const { data, error } = await supabaseClient.auth.verifyOtp({
+        email: input,
+        token: pass,
+        type: "email"
+      });
+
+      if(error) return alert(error.message);
+
+      localStorage.setItem("token", data.session.access_token);
+      window.location.href = "homepage.html";
+      return;
+    }
+
+    // =========================
+    // 🔐 PASSWORD LOGIN (DEFAULT)
+    // =========================
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: input,
+      password: pass
+    });
+
+    if(error) return alert(error.message);
+
+    localStorage.setItem("token", data.session.access_token);
+    window.location.href = "homepage.html";
+
+  } catch(err){
+    alert("Something went wrong");
+    console.log(err);
+  }
+}
+
+// SIGNUP
+async function signup(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabaseClient.auth.signUp({
+    email,
+    password
+  });
+
+  if(error){
+    alert(error.message);
+  } else {
+    alert("Signup successful. Now login.");
+  }
+}
+
+function goHome(){
+  window.location.href = "homepage.html";
+}
+</script>
+</body>
+</html>

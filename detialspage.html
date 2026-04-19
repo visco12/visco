@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Details</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+  --bg1:#0f172a;
+ --bg2:#5838c3;
+  --primary:#8b5cf6;
+  --accent:#22d3ee;
+  --glass: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.12);
+  --price-bg:#111827;
+  --best-bg:#22c55e;
+  --best-color:black;
+}
+
+body{
+margin:0;
+font-family:'Poppins',sans-serif;
+background: linear-gradient(135deg,var(--bg1),var(--bg2));
+color:white;
+}
+
+header{
+text-align:center;
+padding:20px;
+font-size:24px;
+font-weight:600;
+background:linear-gradient(90deg,var(--primary),var(--accent));
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.container{ padding:20px; max-width:900px; margin:auto; }
+
+.card{
+background:var(--glass);
+border:1px solid var(--border);
+border-radius:15px;
+padding:20px;
+margin-bottom:20px;
+backdrop-filter: blur(10px);
+box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+transition: transform 0.2s ease;
+}
+.card:hover{
+transform: translateY(-3px);
+}
+
+.image-box{ position:relative; overflow:hidden; border-radius:15px; }
+.image-box img{
+width:100%;
+border-radius:15px;
+transition: transform 0.3s ease;
+}
+.image-box img:hover{
+transform: scale(1.05);
+}
+
+.rating{
+position:absolute;
+top:10px;
+right:10px;
+background:var(--best-bg);
+color:var(--best-color);
+padding:5px 10px;
+font-size:13px;
+border-radius:12px;
+font-weight:600;
+box-shadow:0 2px 6px rgba(0,0,0,0.4);
+}
+
+h2{ font-size:22px; margin:15px 0 10px 0; }
+
+.price{
+padding:10px 12px;
+border-radius:12px;
+margin:8px 0;
+background:var(--price-bg);
+font-size:14px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-weight:500;
+transition: background 0.2s ease;
+cursor:pointer;
+}
+.price.best{
+background:var(--best-bg);
+color:var(--best-color);
+font-weight:600;
+}
+
+.buy-btn{
+margin-top:15px;
+background:linear-gradient(135deg,var(--primary),var(--accent));
+padding:12px;
+border-radius:15px;
+text-align:center;
+cursor:pointer;
+font-size:16px;
+font-weight:600;
+transition: background 0.3s ease;
+}
+.buy-btn:hover{
+background:linear-gradient(135deg,var(--accent),var(--primary));
+}
+
+.graph-box{
+background:var(--glass);
+border:1px solid var(--border);
+border-radius:15px;
+padding:20px;
+margin-bottom:20px;
+box-shadow:0 3px 12px rgba(0,0,0,0.2);
+}
+
+.tag{
+background:#1e293b;
+padding:8px 12px;
+border-radius:12px;
+margin:6px 6px 6px 0;
+font-size:13px;
+display:inline-block;
+}
+
+.error{
+text-align:center;
+color:#f87171;
+margin-top:50px;
+font-weight:600;
+font-size:18px;
+}
+.back-btn{
+  position:absolute;
+  top:20px;
+  left:20px;
+  background:rgba(255,255,255,0.1);
+  padding:8px 15px;
+  border-radius:20px;
+  cursor:pointer;
+  font-size:14px;
+  backdrop-filter: blur(10px);
+  transition:0.2s;
+}
+
+.back-btn:hover{
+  background:rgba(255,255,255,0.2);
+}
+</style>
+</head>
+
+<body>
+
+<header>⚡ Product Details</header>
+<div class="container" id="main"></div>
+<div class="back-btn" onclick="goBack()">⬅ Back</div>
+<script>
+const id = localStorage.getItem("productId");
+
+
+// ✅ MOVE THIS HERE (GLOBAL)
+function goBack(){
+  if(window.history.length > 1){
+    window.history.back();
+  } else {
+    window.location.href = "homepage.html";
+  }
+}
+
+async function loadProduct(){
+  try{
+let res = await fetch(`https://visco.onrender.com/product/${id}`);
+    let p = await res.json();
+
+    if(!p || p.error){
+      document.getElementById("main").innerHTML = `<div class="error">❌ Product not found</div>`;
+      return;
+    }
+
+    // rest of your code...
+
+
+
+// PRICE LOGIC
+const links = {
+  amazon: p.amazon_link,
+  flipkart: p.flipkart_link
+};
+
+const nameMap = {
+  amazon: "Amazon",
+  flipkart: "Flipkart"
+};
+
+let keys = [], values = [], min = Infinity, bestKey = "";
+
+// Pick the lowest price
+for (let k in nameMap) {
+  if (p[k] !== null && p[k] !== undefined && p[k] > 0) {
+    if (p[k] < min) {
+      min = p[k];
+      bestKey = k;
+    }
+  }
+}
+
+// Build price cards
+let priceHTML = "";
+for (let k in nameMap) {
+  if (p[k] !== null && p[k] !== undefined && p[k] > 0) {
+    let isBest = k === bestKey ? "best" : "";
+    priceHTML += `<div class="price ${isBest}"onclick="window.open('${links[k]}')">${nameMap[k]} - ₹${p[k]}</div>`;
+    keys.push(nameMap[k]);
+    values.push(p[k]);
+  }
+}
+
+// DETAILS
+function getDetails(p){
+if(p.category==="electronics"){
+return `
+<div class="card">
+<h3>📦 Delivery & Warranty</h3>
+<div class="tag">2-4 Days Delivery</div>
+<div class="tag">7 Days Replacement</div>
+<div class="tag">1 Year Warranty</div>
+</div>
+
+<div class="card">
+<h3>🎁 Offers</h3>
+<div class="tag">Bank Discount Available</div>
+<div class="tag">Exchange Available</div>
+</div>`;
+}
+
+if(p.category==="fashion"){
+return `
+<div class="card">
+<h3>👕 Details</h3>
+<div class="tag">Premium Fabric</div>
+<div class="tag">Easy Returns</div>
+</div>`;
+}
+return "";
+}
+
+// UI
+document.getElementById("main").innerHTML=`
+<div class="card">
+<div class="image-box">
+<img src="${p.image}">
+<div class="rating">⭐ ${p.rating|| 0}</div>
+</div>
+
+<h2>${p.name}</h2>
+${priceHTML}
+
+<div class="buy-btn" onclick="window.open('${links[bestKey]}')">
+</div>
+
+${getDetails(p)}
+
+<div class="graph-box">
+<h3>📊 Price Comparison</h3>
+<canvas id="priceChart"></canvas>
+</div>
+
+<div class="graph-box">
+<h3>⭐ Rating Overview</h3>
+<canvas id="ratingChart"></canvas>
+</div>
+`;
+
+// CHARTS
+new Chart(document.getElementById("priceChart"),{
+type:'bar',
+data:{labels:keys,datasets:[{data:values,backgroundColor:'#8b5cf6'}]},
+options:{responsive:true,plugins:{legend:{display:false}}}
+});
+
+new Chart(document.getElementById("ratingChart"),{
+type:'line',
+data:{labels:keys,datasets:[{data: keys.map(()=>p.rating || 0),borderColor:'#22d3ee',fill:true,backgroundColor:'rgba(34,211,238,0.2)'}]},
+options:{responsive:true,plugins:{legend:{display:false}}}
+});
+
+}catch(err){
+console.error(err);
+document.getElementById("main").innerHTML = `<div class="error">⚠️ Backend not running</div>`;
+}
+}
+
+
+loadProduct();
+</script>
+
+</body>
+</html>
