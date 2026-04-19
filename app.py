@@ -163,7 +163,57 @@ def add_product():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@app.route("/me", methods=["GET"])
+def me():
+    auth = request.headers.get("Authorization")
 
+    if not auth:
+        return jsonify({"error": "No token"}), 401
+
+    token = auth.replace("Bearer ", "")
+
+    try:
+        user = supabase.auth.get_user(token)
+        return jsonify({
+            "status": "valid",
+            "user": user
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
+
+        @app.route("/signup", methods=["POST"])
+def signup():
+    data = request.get_json()
+
+    try:
+        res = supabase.auth.sign_up({
+            "email": data["email"],
+            "password": data["password"]
+        })
+
+        return jsonify({"status": "created"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+        
+        @app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+
+    try:
+        res = supabase.auth.sign_in_with_password({
+            "email": data["email"],
+            "password": data["password"]
+        })
+
+        return jsonify({
+            "token": res.session.access_token,
+            "user": res.user
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
 # =========================
 # UPDATE PRODUCT
 # =========================
