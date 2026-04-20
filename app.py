@@ -15,6 +15,8 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 SUPABASE_JWT_SECRET = os.environ.get("JWT_SECRET")
 
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise Exception("❌ Supabase ENV variables missing")
 # Init Supabase
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
