@@ -176,9 +176,10 @@ def me():
 
     try:
         user = supabase.auth.get_user(token)
+
         return jsonify({
             "status": "valid",
-            "user": user
+            "user": user.user.model_dump()
         })
 
     except Exception as e:
@@ -211,7 +212,7 @@ def login():
 
         return jsonify({
             "token": res.session.access_token,
-            "user": res.user
+            "user": res.user.model_dump()
         })
 
     except Exception as e:
