@@ -182,7 +182,7 @@ def me():
     except Exception as e:
         return jsonify({"error": str(e)}), 401
 
-        @app.route("/signup", methods=["POST"])
+@app.route("/signup", methods=["POST"])
 def signup():
     data = request.get_json()
 
@@ -197,7 +197,7 @@ def signup():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
         
-        @app.route("/login", methods=["POST"])
+@app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
 
