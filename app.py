@@ -174,32 +174,38 @@ def me():
 
     token = auth.replace("Bearer ", "")
 
-    try:
-        user = supabase.auth.get_user(token)
+    user = verify_token(token)
 
-        return jsonify({
-            "status": "valid",
-            "user": user.user.model_dump()
-        })
+    if not user:
+        return jsonify({"error": "Invalid token"}), 401
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 401
+    return jsonify({
+        "status": "valid",
+        "user": user
+    })
 
 @app.route("/signup-phone", methods=["POST"])
 def signup_phone():
     data = request.get_json()
 
+    name = data.get("name")
     phone = data.get("phone")
     password = data.get("password")
 
-    if not phone or not password:
+   if not name or not phone or not password:
         return jsonify({"error": "Missing fields"}), 400
+
+    # check duplicate
+    existing = supabase.table("users").select("*").eq("phone", phone).execute().data
+    if existing:
+        return jsonify({"error": "User already exists"}), 400
 
     # hash password
     hashed = generate_password_hash(password)
 
     try:
         supabase.table("users").insert({
+            "name": name,
             "phone": phone,
             "password": hashed
         }).execute()
@@ -215,6 +221,9 @@ def login_phone():
     phone = data.get("phone")
     password = data.get("password")
 
+    if not phone or not password:
+        return jsonify({"error": "Missing fields"}), 400
+
     res = supabase.table("users").select("*").eq("phone", phone).execute().data
 
     if not res:
@@ -222,11 +231,14 @@ def login_phone():
 
     user = res[0]
 
-    if check_password_hash(user["password"], password):
-        return jsonify({
-            "status": "success",
-            "token": phone   # simple token for now
-        })
+if check_password_hash(user["password"], password):
+   token = str(uuid.uuid4())
+
+    return jsonify({
+        "status": "success",
+        "token": token,
+        "name": user.get("name", "")
+  })
     else:
         return jsonify({"error": "Invalid password"}), 401
 # =========================
