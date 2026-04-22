@@ -233,8 +233,7 @@ def login_phone():
     user = res[0]
 
     if check_password_hash(user["password"], password):
-        token = str(uuid.uuid4())
-
+        token = user["phone"]
         return jsonify({
             "status": "success",
             "token": token,
