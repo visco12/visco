@@ -192,7 +192,7 @@ def signup_phone():
     phone = data.get("phone")
     password = data.get("password")
 
-   if not name or not phone or not password:
+    if not name or not phone or not password:
         return jsonify({"error": "Missing fields"}), 400
 
     # check duplicate
