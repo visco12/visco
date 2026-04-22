@@ -8,6 +8,7 @@ from rapidfuzz import fuzz
 from supabase import create_client
 import re, random, time, os
 from werkzeug.security import generate_password_hash, check_password_hash
+import uuid  # ADD THIS AT TOP
 # =========================
 # ENV VARIABLES (RENDER)
 # =========================
@@ -231,14 +232,14 @@ def login_phone():
 
     user = res[0]
 
-if check_password_hash(user["password"], password):
-   token = str(uuid.uuid4())
+    if check_password_hash(user["password"], password):
+        token = str(uuid.uuid4())
 
-    return jsonify({
-        "status": "success",
-        "token": token,
-        "name": user.get("name", "")
-  })
+        return jsonify({
+            "status": "success",
+            "token": token,
+            "name": user.get("name", "")
+        })
     else:
         return jsonify({"error": "Invalid password"}), 401
 # =========================
