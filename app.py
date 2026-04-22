@@ -7,7 +7,7 @@ from flask_cors import CORS
 from rapidfuzz import fuzz
 from supabase import create_client
 import re, random, time, os
-
+from werkzeug.security import generate_password_hash, check_password_hash
 # =========================
 # ENV VARIABLES (RENDER)
 # =========================
@@ -39,12 +39,12 @@ USER_AGENTS = [
 # HELPERS
 # =========================
 def verify_token(token):
-    try:
-        user = supabase.auth.get_user(token)
-        return user
-    except Exception as e:
-        print("Auth error:", e)
+    if not token:
         return None
+
+    user = supabase.table("users").select("*").eq("phone", token).execute().data
+
+    return user[0] if user else None
 
 def clean_text(text):
     if not text:
@@ -185,38 +185,50 @@ def me():
     except Exception as e:
         return jsonify({"error": str(e)}), 401
 
-@app.route("/signup", methods=["POST"])
-def signup():
+@app.route("/signup-phone", methods=["POST"])
+def signup_phone():
     data = request.get_json()
 
+    phone = data.get("phone")
+    password = data.get("password")
+
+    if not phone or not password:
+        return jsonify({"error": "Missing fields"}), 400
+
+    # hash password
+    hashed = generate_password_hash(password)
+
     try:
-        res = supabase.auth.sign_up({
-            "email": data["email"],
-            "password": data["password"]
-        })
+        supabase.table("users").insert({
+            "phone": phone,
+            "password": hashed
+        }).execute()
 
         return jsonify({"status": "created"})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 400
         
-@app.route("/login", methods=["POST"])
-def login():
+@app.route("/login-phone", methods=["POST"])
+def login_phone():
     data = request.get_json()
 
-    try:
-        res = supabase.auth.sign_in_with_password({
-            "email": data["email"],
-            "password": data["password"]
-        })
+    phone = data.get("phone")
+    password = data.get("password")
 
+    res = supabase.table("users").select("*").eq("phone", phone).execute().data
+
+    if not res:
+        return jsonify({"error": "User not found"}), 404
+
+    user = res[0]
+
+    if check_password_hash(user["password"], password):
         return jsonify({
-            "token": res.session.access_token,
-            "user": res.user.model_dump()
+            "status": "success",
+            "token": phone   # simple token for now
         })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 401
+    else:
+        return jsonify({"error": "Invalid password"}), 401
 # =========================
 # UPDATE PRODUCT
 # =========================
