@@ -4,3 +4,4 @@ supabase
 python-jose
 rapidfuzz
 gunicorn
+Werkzeug
