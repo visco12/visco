@@ -100,29 +100,16 @@ def get_product(product_id):
 def all_products():
     auth_header = request.headers.get("Authorization")
 
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
+    user = None
 
-    token = auth_header.split("Bearer ")[1]
-    user = verify_token(token)
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split("Bearer ")[1]
+        user = verify_token(token)
 
-    if not user:
-        return jsonify({"error": "Invalid token"}), 401
+    # ❗ DO NOT BLOCK GUEST
+    data = supabase.table("product").select("*").execute().data or []
 
-    try:
-        data = supabase.table("product").select("*").execute().data or []
-
-        for p in data:
-            p['amazon'] = p.get('amazon', 0)
-            p['flipkart'] = p.get('flipkart', 0)
-            p['amazon_link'] = p.get('amazon_link', "#")
-            p['flipkart_link'] = p.get('flipkart_link', "#")
-
-        return jsonify(data)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
+    return jsonify(data)
 # =========================
 # MATCH PRODUCT
 # =========================
