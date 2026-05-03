@@ -248,7 +248,22 @@ def update_product():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@app.route("/search")
+def search_products():
+    query = request.args.get("q", "")
 
+    if not query:
+        return jsonify([])
+
+    data = supabase.table("product").select("*").execute().data or []
+
+    results = []
+
+    for p in data:
+        if query.lower() in p.get("name", "").lower():
+            results.append(p)
+
+    return jsonify(results)
 # =========================
 # RUN SERVER (RENDER READY)
 # =========================
